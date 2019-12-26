@@ -137,24 +137,15 @@ V3F QuadControl::RollPitchControl(V3F accelCmd, Quaternion<float> attitude, floa
 
   V3F pqrCmd;
   Mat3x3F R = attitude.RotationMatrix_IwrtB();
-
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
-    if (collThrustCmd > 0)
-    {
-        float c_d = collThrustCmd / mass;
-        V3F accel_cmd = -accelCmd / c_d;
-        float b_x_c_dot = kpBank * (R(0, 2) - accel_cmd.x);
-        float b_y_c_dot = kpBank * (R(1, 2) - accel_cmd.y);
-        pqrCmd.x = (1 / R(2, 2)) * (-R(1, 0) * b_x_c_dot + R(0, 0) * b_y_c_dot);
-        pqrCmd.y = (1 / R(2, 2)) * (-R(1, 1) * b_x_c_dot + R(0, 1) * b_y_c_dot);
-    }
-    else
-    {
-        pqrCmd.x = 0;
-        pqrCmd.y = 0;
-        collThrustCmd = 0;
-    }
-    
+
+    float c_d = collThrustCmd / mass;
+    V3F target_R = -accelCmd / c_d;
+    target_R.constrain(-maxTiltAngle, maxTiltAngle);
+    float b_x_c_dot = kpBank * (R(0, 2) - target_R.x);
+    float b_y_c_dot = kpBank * (R(1, 2) - target_R.y);
+    pqrCmd.x = (1 / R(2, 2)) * (-R(1, 0) * b_x_c_dot + R(0, 0) * b_y_c_dot);
+    pqrCmd.y = (1 / R(2, 2)) * (-R(1, 1) * b_x_c_dot + R(0, 1) * b_y_c_dot);
     pqrCmd.z = 0;
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
@@ -187,31 +178,14 @@ float QuadControl::AltitudeControl(float posZCmd, float velZCmd, float posZ, flo
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
     
-        if (velZCmd > 0)
-        {
-            velZCmd = CONSTRAIN(velZCmd, 0, maxDescentRate);
-        }
-        else
-        {
-            velZCmd = CONSTRAIN(velZCmd, -maxAscentRate, 0);
-        }
+    float e = posZCmd - posZ;
+    float vel_dot = kpPosZ * e + velZCmd;
+    vel_dot = CONSTRAIN(vel_dot, -maxAscentRate, maxDescentRate);
+    integratedAltitudeError += e * dt;
+    float acc_dot = accelZCmd + kpVelZ * (vel_dot - velZ) + KiPosZ * integratedAltitudeError;
+    thrust = -mass * acc_dot / R(2, 2);
 
-        if (velZ > 0)
-        {
-            velZ = CONSTRAIN(velZ, 0, maxDescentRate);
-        }
-        else
-        {
-            velZ = CONSTRAIN(velZ, -maxAscentRate, 0);
-        }
-    
-    float pos_error = posZCmd - posZ;
-    integratedAltitudeError += pos_error * dt;
-    float u_bar = kpPosZ * (pos_error) + kpVelZ * (velZCmd - velZ) + KiPosZ * integratedAltitudeError + accelZCmd;
-
-    thrust = -u_bar * mass / R(2, 2);
-    
-  /////////////////////////////// END STUDENT CODE ////////////////////////////
+    /////////////////////////////// END STUDENT CODE ////////////////////////////
   
   return thrust;
 }
@@ -247,12 +221,20 @@ V3F QuadControl::LateralPositionControl(V3F posCmd, V3F velCmd, V3F pos, V3F vel
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
-    velCmd.constrain(-maxSpeedXY, maxSpeedXY);
-    velCmd.z = 0;
-    vel.constrain(-maxSpeedXY, maxSpeedXY);
-    vel.z = 0;
-    accelCmd = kpPosXY * (posCmd - pos) + kpVelXY * (velCmd - vel) + accelCmdFF;
-    accelCmd.constrain(-maxAccelXY, maxAccelXY);
+    V3F vel_dot = kpPosXY * (posCmd - pos) + velCmd;
+    vel_dot.z = 0;
+    float vel_norm = sqrt(vel_dot[0] * vel_dot[0] + vel_dot[1] * vel_dot[1]);
+    if (vel_norm > maxSpeedXY)
+    {
+        vel_dot = vel_dot * maxSpeedXY / vel_norm;
+    }
+    accelCmd = accelCmdFF + kpVelXY * (vel_dot - vel);
+    float acc_norm = sqrt(accelCmd[0] * accelCmd[0] + accelCmd[1] * accelCmd[1]);
+    if (acc_norm > maxAccelXY)
+    {
+        accelCmd = accelCmd * maxAccelXY / acc_norm;
+    }
+
     accelCmd.z = 0;
     
   /////////////////////////////// END STUDENT CODE ////////////////////////////
@@ -304,7 +286,6 @@ VehicleCommand QuadControl::RunControl(float dt, float simTime)
   // reserve some thrust margin for angle control
   float thrustMargin = .1f*(maxMotorThrust - minMotorThrust);
   collThrustCmd = CONSTRAIN(collThrustCmd, (minMotorThrust+ thrustMargin)*4.f, (maxMotorThrust-thrustMargin)*4.f);
-  
   V3F desAcc = LateralPositionControl(curTrajPoint.position, curTrajPoint.velocity, estPos, estVel, curTrajPoint.accel);
   
   V3F desOmega = RollPitchControl(desAcc, estAtt, collThrustCmd);
