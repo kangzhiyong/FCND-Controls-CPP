@@ -47,6 +47,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D75A980323B63FC80060E81B /* 6_SpiralTrajectory.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = 6_SpiralTrajectory.txt; path = ../config/6_SpiralTrajectory.txt; sourceTree = "<group>"; };
+		D75A980423B6436E0060E81B /* 7_testTrajectory.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = 7_testTrajectory.txt; path = ../config/7_testTrajectory.txt; sourceTree = "<group>"; };
 		DB076C8A202A34C500386052 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = System/Library/Frameworks/GLUT.framework; sourceTree = SDKROOT; };
 		DB31989E20334078008ACD56 /* Simulation.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Simulation.txt; path = ../config/Simulation.txt; sourceTree = "<group>"; };
 		DB3198A320334078008ACD56 /* QuadPhysicalParams.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = QuadPhysicalParams.txt; path = ../config/QuadPhysicalParams.txt; sourceTree = "<group>"; };
@@ -147,6 +149,8 @@
 				DBD204F6203636AA00E0F55A /* 3_PositionControl.txt */,
 				DBD204F7203636AA00E0F55A /* 4_Nonidealities.txt */,
 				DBD204F8203636AA00E0F55A /* 5_TrajectoryFollow.txt */,
+				D75A980323B63FC80060E81B /* 6_SpiralTrajectory.txt */,
+				D75A980423B6436E0060E81B /* 7_testTrajectory.txt */,
 				DBD204F9203636AA00E0F55A /* QuadControlParams.txt */,
 				DBD204F5203636AA00E0F55A /* Scenarios.txt */,
 				DB3198A320334078008ACD56 /* QuadPhysicalParams.txt */,
